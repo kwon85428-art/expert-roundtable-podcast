@@ -1,0 +1,78 @@
+name: expert-roundtable-to-video
+version: "1.0"
+description: >
+  Expert roundtable podcast to video pipeline. Takes script + podcast MP3 + SRT
+  from the expert-roundtable-podcast skill, adds speaker cards, animated subtitles,
+  and background visuals, and produces a polished video.
+category: custom
+stability: beta
+default_checkpoint_policy: guided
+
+orchestration:
+  mode: director
+  skill: expert-roundtable-to-video/director
+  budget_default_usd: 0.50
+  max_revisions_per_stage: 2
+
+required_skills:
+  - expert-roundtable-to-video/director
+  - expert-roundtable-to-video/scene-planner
+  - expert-roundtable-to-video/asset-builder
+  - expert-roundtable-to-video/composer
+  - meta/reviewer
+
+compatible_playbooks:
+  recommended:
+    - clean-professional
+  custom_allowed: true
+
+stages:
+  - name: scene_plan
+    skill: expert-roundtable-to-video/scene-planner
+    produces:
+      - scene_plan
+    checkpoint_required: false
+    success_criteria:
+      - Each SRT entry has a scene with speaker, timing, and visual treatment
+      - Speaker order matches roundtable flow
+
+  - name: assets
+    skill: expert-roundtable-to-video/asset-builder
+    required_artifacts_in:
+      - scene_plan
+    produces:
+      - asset_manifest
+    required_tools:
+      - subtitle_gen
+    optional_tools:
+      - image_gen
+      - image_selector
+    tools_available:
+      - subtitle_gen
+      - image_gen
+      - image_selector
+    checkpoint_required: false
+    success_criteria:
+      - Speaker card images generated per unique speaker
+      - Subtitles validated against SRT timing
+
+  - name: compose
+    skill: expert-roundtable-to-video/composer
+    required_artifacts_in:
+      - scene_plan
+      - asset_manifest
+    produces:
+      - render_report
+      - final_review
+    required_tools:
+      - video_compose
+    optional_tools:
+      - audio_mixer
+    tools_available:
+      - video_compose
+      - audio_mixer
+    checkpoint_required: true
+    success_criteria:
+      - Video rendered with audio, subtitles, and speaker overlays
+      - Duration matches podcast
+      - Output passes ffprobe validation

@@ -7,13 +7,13 @@ description: End-to-end pipeline: topic → expert roundtable discussion script 
 
 ## Overview
 
-This skill produces a complete AI podcast + presentation deck from a roundtable topic in one pipeline:
+This skill produces a complete AI podcast + presentation + video from a roundtable topic in one pipeline:
 
 ```
-Topic + Experts → [energy-expert-roundtable] → Script → [DashScope CosyVoice TTS] → MP3 + SRT + PPT
+Topic + Experts → [energy-expert-roundtable] → Script → [DashScope CosyVoice TTS] → MP3 + SRT + PPT → [OpenMontage] → Video
 ```
 
-Four stages, each can run independently or as a full pipeline.
+Five stages, each can run independently or as a full pipeline.
 
 ---
 
@@ -236,6 +236,51 @@ python3 concat_podcast.py
 npm install pptxgenjs && node make_pptx.js
 
 # Output: podcast.mp3, podcast.srt, roundtable.pptx
+```
+
+---
+
+## Stage 5: Video 生成（通过 OpenMontage）
+
+### 集成方式
+
+本 Skill 包含一个自定义 OpenMontage pipeline：`openmontage/pipeline.yaml`。
+
+将 `openmontage/` 目录复制到 OpenMontage 项目中，即可将圆桌播客转视频：
+
+```bash
+# 1. 克隆 OpenMontage
+git clone https://github.com/calesthio/OpenMontage.git
+cd OpenMontage && make setup
+
+# 2. 复制本 skill 的 pipeline
+cp -r /path/to/expert-roundtable-podcast/openmontage/* OpenMontage/
+
+# 3. 将播客输出文件放入工作目录
+cp podcast.mp3 podcast.srt script.md OpenMontage/projects/roundtable/
+
+# 4. 运行视频生成
+# 在 AI coding assistant 中：
+"Run the expert-roundtable-to-video pipeline on projects/roundtable/"
+```
+
+### 视频输出
+
+- **分辨率**：1920×1080（YouTube / B站适配）
+- **布局**：背景图 + 发言人卡片（左上） + 逐词高亮字幕（居中）
+- **动画**：Ken Burns 缩放 + 字幕 karaoke + 场景淡入淡出
+- **零成本路径**：无需任何 API Key，Pillow 生成卡片 + 免费素材背景 + Remotion 渲染
+
+### Pipeline 结构
+
+```
+openmontage/
+├── pipeline.yaml              ← 3 阶段管线定义
+└── skills/
+    ├── director.md            ← 总导演
+    ├── scene-planner.md       ← SRT→场景计划
+    ├── asset-builder.md       ← 发言人卡片 + 字幕
+    └── composer.md            ← Remotion 合成 + 渲染
 ```
 
 ---
