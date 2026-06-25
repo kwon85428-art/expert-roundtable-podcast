@@ -7,13 +7,13 @@ description: End-to-end pipeline: topic → expert roundtable discussion script 
 
 ## Overview
 
-This skill produces a complete AI podcast from a roundtable topic in one pipeline:
+This skill produces a complete AI podcast + presentation deck from a roundtable topic in one pipeline:
 
 ```
-Topic + Experts → [energy-expert-roundtable] → Script → [DashScope CosyVoice TTS] → MP3 + SRT
+Topic + Experts → [energy-expert-roundtable] → Script → [DashScope CosyVoice TTS] → MP3 + SRT + PPT
 ```
 
-Three stages, each can run independently or as a full pipeline.
+Four stages, each can run independently or as a full pipeline.
 
 ---
 
@@ -189,6 +189,30 @@ Gap logic:
 
 ---
 
+## Stage 4: PPT 生成（可选）
+
+根据讨论稿自动生成专业演示文稿：
+
+```bash
+npm install pptxgenjs
+node make_pptx.js
+# Outputs: roundtable.pptx
+```
+
+PPT 结构（~10 页）：
+- 标题页（深色背景 + 主题色腰线）
+- 核心数据卡片（关键数字可视化）
+- 主持人开场 / 问题重述
+- 每位专家评议各一页（✅共识 + ⚠️质疑）
+- 共识与分歧双栏对比
+- 关键交锋速览
+- 核心结论 + 下一步
+- 结尾页
+
+配色方案见 `make_pptx.js` 顶部 `C` 对象，可根据话题调整。
+
+---
+
 ## Full Pipeline Quickstart
 
 ```bash
@@ -198,17 +222,20 @@ export DASHSCOPE_API_KEY="sk-xxx"
 
 # 3. Setup & patch
 python3 -m venv /tmp/ds-venv && /tmp/ds-venv/bin/pip install dashscope
-# (apply SDK patch above)
+python3 patch_sdk.py
 
 # 4. Configure VOICES in batch_generate.py
 
-# 5. Generate
+# 5. Generate audio segments
 /tmp/ds-venv/bin/python3 batch_generate.py
 
 # 6. Concat + SRT
 python3 concat_podcast.py
 
-# Output: podcast.mp3, podcast.srt
+# 7. (Optional) Generate PPT
+npm install pptxgenjs && node make_pptx.js
+
+# Output: podcast.mp3, podcast.srt, roundtable.pptx
 ```
 
 ---
